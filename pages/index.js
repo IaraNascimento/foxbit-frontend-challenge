@@ -1,57 +1,32 @@
 import Head from 'next/head'
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import CurrencyList from '../components/CurrencyList';
 import Title from '../components/Title';
 
 export default function Home() {
+  const [currencies, setCurrencies] = useState([]);
+
   useEffect(() => {
     const ws = new WebSocket('wss://api.foxbit.com.br/');
 
-    ws.addEventListener('open', function open() {
-      console.log('connected');
-
-      // GET INSTRUMENTS
+    ws.addEventListener('open', () => {
       const payloadInstruments = {
-        m:0,
-        i:2,
-        n: 'GetInstruments',
-        o: JSON.stringify({ OMSID: 1}),
-      };
-
-      ws.send(JSON.stringify(payloadInstruments));
-
-      // EXAMPLE SUBSCRIBE BTCBRL
-      const payload = {
         m: 0,
         i: 2,
-        n: 'SubscribeLevel1',
-        o: JSON.stringify({ InstrumentId: 1 }),
-      }
-
-      ws.send(JSON.stringify(payload));
+        n: 'GetInstruments',
+        o: JSON.stringify({ OMSID: 1 }),
+      };
+      ws.send(JSON.stringify(payloadInstruments));
     });
 
-    ws.addEventListener('close', function close() {
-      console.log('disconnected');
-    });
-
-    ws.addEventListener('message', function message(response) {
+    ws.addEventListener('message', (response) => {
       const { n, o } = JSON.parse(response.data);
       const channel = n; // GetInstruments | SubscribeLevel1 | Level1UpdateEvent
-      const data = JSON.parse(0);
+      const data = JSON.parse(o);
 
-      // RESPONSE WITH ALL CRYPTOS
-      if (n === 'GetInstruments') {
+      if (channel === 'GetInstruments') {
         console.log(data);
-      }
-
-      // FIRST RESPONSE
-      if (n === 'SubscribeLevel1') {
-        console.log(data);
-      }
-
-      // UPDATES TO SUBSCRIBELEVEL1
-      if (n === 'Level1UpdateEvent') {
-        console.log(data);
+        setCurrencies(data);
       }
     });
   }, []);
@@ -65,6 +40,7 @@ export default function Home() {
       </Head>
       <main>
         <Title>Foxbit - Frontend Challenge</Title>
+        <CurrencyList currencies={currencies} />
       </main>
     </div>
   )
