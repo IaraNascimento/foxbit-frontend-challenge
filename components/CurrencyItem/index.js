@@ -1,10 +1,11 @@
 
 import { useEffect, useState } from 'react';
-import { Wrap, Header, Image, VariationBadge } from './styles';
+import Loading from '../Loading';
+import { Wrap, Header, Image, VariationBadge, Name, Value, Label, Volume } from './styles';
 
 export default function CurrencyItem(props) {
 
-  const [currency, setCurrency] = useState(props.currency);
+  const [currencyData, setCurrencyData] = useState({});
 
   useEffect(() => {
     const ws = new WebSocket('wss://api.foxbit.com.br/');
@@ -26,14 +27,12 @@ export default function CurrencyItem(props) {
 
       // FIRST RESPONSE
       if (channel === 'SubscribeLevel1') {
-        setCurrency({ ...currency, ...data });
-        console.log(data);
+        setCurrencyData(data);
       }
 
       // UPDATES TO SUBSCRIBELEVEL1
       if (channel === 'Level1UpdateEvent') {
-        setCurrency({ ...currency, ...data });
-        console.log(data);
+        setCurrencyData(data);
       }
     });
   }, []);
@@ -41,10 +40,26 @@ export default function CurrencyItem(props) {
   return (
     <Wrap>
       <Header>
-        <Image src={'https://statics.foxbit.com.br/icons/colored/' + currency.Product1Symbol.toLowerCase() + '.svg'} />
-        <VariationBadge value={currency.Rolling24HrPxChange}>{currency.Rolling24HrPxChange}</VariationBadge>
+        <Image src={'https://statics.foxbit.com.br/icons/colored/' + props.currency.Product1Symbol.toLowerCase() + '.svg'} />
+        {currencyData.Rolling24HrPxChange ?
+          <VariationBadge value={currencyData.Rolling24HrPxChange}>{currencyData.Rolling24HrPxChange.toLocaleString('pt-br', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%</VariationBadge> :
+          <Loading />
+        }
       </Header>
-      {currency.Product1Symbol}
+      <Name>{props.currency.Product1Symbol}</Name>
+      {currencyData.LastTradedPx ?
+        <Value>R$ {currencyData.LastTradedPx.toLocaleString('pt-br', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}</Value> :
+        <Loading />
+      }
+      <Label>Volume (24h):</Label>
+      {currencyData.Rolling24HrVolume ?
+        <Volume>
+          {currencyData.Rolling24HrVolume.toLocaleString('pt-br', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          {' '}
+          {props.currency.Product1Symbol}
+        </Volume> :
+        <Loading />
+      }
     </Wrap>
   )
 }
